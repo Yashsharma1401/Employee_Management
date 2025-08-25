@@ -1,16 +1,16 @@
-// Copy and paste this into MongoDB Compass or MongoDB shell
-// to add test data to your local database
+// MongoDB Shell Script - Run this in MongoDB Compass or mongo shell
+// Connect to: mongodb://localhost:27017/employee_management
 
-use employee_management
+// Switch to employee_management database
+db = db.getSiblingDB('employee_management');
 
 // Clear existing data
-db.departments.deleteMany({})
-db.users.deleteMany({})
+db.departments.deleteMany({});
+db.users.deleteMany({});
 
 // Insert departments
-db.departments.insertMany([
+const departments = [
   {
-    _id: ObjectId(),
     name: "Engineering",
     description: "Software development and technical operations",
     budget: 500000,
@@ -21,8 +21,7 @@ db.departments.insertMany([
     updatedAt: new Date()
   },
   {
-    _id: ObjectId(),
-    name: "Human Resources",
+    name: "Human Resources", 
     description: "Employee relations and organizational development",
     budget: 200000,
     location: "Building B, Floor 1",
@@ -32,9 +31,8 @@ db.departments.insertMany([
     updatedAt: new Date()
   },
   {
-    _id: ObjectId(),
     name: "Marketing",
-    description: "Brand promotion and customer engagement",
+    description: "Brand promotion and customer engagement", 
     budget: 300000,
     location: "Building A, Floor 2",
     isActive: true,
@@ -42,22 +40,23 @@ db.departments.insertMany([
     createdAt: new Date(),
     updatedAt: new Date()
   }
-])
+];
+
+db.departments.insertMany(departments);
 
 // Get department IDs for reference
-const engDept = db.departments.findOne({name: "Engineering"})
-const hrDept = db.departments.findOne({name: "Human Resources"})
+const engDept = db.departments.findOne({name: "Engineering"});
+const hrDept = db.departments.findOne({name: "Human Resources"});
 
-// Insert test users
-db.users.insertMany([
+// Insert test users (password is 'admin123' for all)
+const users = [
   {
-    _id: ObjectId(),
     firstName: "Admin",
-    lastName: "User",
+    lastName: "User", 
     email: "admin@company.com",
     phone: "+1234567890",
     employeeId: "EMP001",
-    password: "$2b$12$LQv3c1yqBWVHxkd0LHAkCOYz6TtxMQJqhN8/LbynAmH4P4y5OP6i.", // password: admin123
+    password: "$2b$12$LQv3c1yqBWVHxkd0LHAkCOYz6TtxMQJqhN8/LbynAmH4P4y5OP6i.",
     role: "admin",
     department: engDept._id,
     designation: "System Administrator",
@@ -78,13 +77,12 @@ db.users.insertMany([
     updatedAt: new Date()
   },
   {
-    _id: ObjectId(),
     firstName: "John",
     lastName: "Doe",
-    email: "john.doe@company.com",
+    email: "john.doe@company.com", 
     phone: "+1234567891",
     employeeId: "EMP002",
-    password: "$2b$12$LQv3c1yqBWVHxkd0LHAkCOYz6TtxMQJqhN8/LbynAmH4P4y5OP6i.", // password: admin123
+    password: "$2b$12$LQv3c1yqBWVHxkd0LHAkCOYz6TtxMQJqhN8/LbynAmH4P4y5OP6i.",
     role: "employee",
     department: engDept._id,
     designation: "Software Engineer",
@@ -105,13 +103,12 @@ db.users.insertMany([
     updatedAt: new Date()
   },
   {
-    _id: ObjectId(),
     firstName: "Jane",
     lastName: "Smith",
     email: "jane.smith@company.com",
-    phone: "+1234567892",
+    phone: "+1234567892", 
     employeeId: "EMP003",
-    password: "$2b$12$LQv3c1yqBWVHxkd0LHAkCOYz6TtxMQJqhN8/LbynAmH4P4y5OP6i.", // password: admin123
+    password: "$2b$12$LQv3c1yqBWVHxkd0LHAkCOYz6TtxMQJqhN8/LbynAmH4P4y5OP6i.",
     role: "hr",
     department: hrDept._id,
     designation: "HR Manager",
@@ -131,10 +128,12 @@ db.users.insertMany([
     createdAt: new Date(),
     updatedAt: new Date()
   }
-])
+];
 
-print("✅ Seed data inserted successfully!")
-print("👤 Login credentials:")
-print("   Admin: admin@company.com / admin123")
-print("   Employee: john.doe@company.com / admin123") 
-print("   HR: jane.smith@company.com / admin123")
+db.users.insertMany(users);
+
+print("✅ Seed data inserted successfully!");
+print("👤 Login credentials:");
+print("   Admin: admin@company.com / admin123");
+print("   Employee: john.doe@company.com / admin123");
+print("   HR: jane.smith@company.com / admin123");
