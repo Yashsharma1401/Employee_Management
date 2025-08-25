@@ -25,6 +25,11 @@ const __dirname = path.dirname(__filename);
 // Connect to database
 connectDB();
 
+// Seed data in development
+if (process.env.NODE_ENV === 'development') {
+  import('./seedData.js').catch(console.error);
+}
+
 const app = express();
 
 // Security middleware
