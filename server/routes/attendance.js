@@ -1,31 +1,10 @@
 import express from 'express';
 import { protect, authorize, canAccessEmployee } from '../middleware/auth.js';
 import { validateAttendance } from '../middleware/validation.js';
-
-const router = express.Router();
-
-// Protect all routes
-router.use(protect);
-
-// Clock in/out routes
-router.post('/clock-in', validateAttendance, clockIn);
-router.patch('/clock-out/:id', clockOut);
-
-// Get attendance records
-router.get('/my-attendance', getMyAttendance);
-router.get('/employee/:employeeId', canAccessEmployee, getEmployeeAttendance);
-router.get('/summary/:employeeId', canAccessEmployee, getAttendanceSummary);
-
-// Admin/Manager routes
-router.use(authorize('super_admin', 'admin', 'hr', 'manager'));
-router.get('/', getAllAttendance);
-router.post('/manual-entry', validateAttendance, createManualEntry);
-router.patch('/:id/approve', approveAttendance);
-router.get('/reports', getAttendanceReports);
-
-// Attendance controller functions
 import Attendance from '../models/Attendance.js';
 import { catchAsync, AppError } from '../middleware/errorHandler.js';
+
+const router = express.Router();
 
 const clockIn = catchAsync(async (req, res, next) => {
   const { location } = req.body;
@@ -101,5 +80,15 @@ const getMyAttendance = catchAsync(async (req, res, next) => {
     data: { attendance }
   });
 });
+
+// Protect all routes
+router.use(protect);
+
+// Clock in/out routes
+router.post('/clock-in', validateAttendance, clockIn);
+router.patch('/clock-out/:id', clockOut);
+
+// Get attendance records
+router.get('/my-attendance', getMyAttendance);
 
 export default router;
