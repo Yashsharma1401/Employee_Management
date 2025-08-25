@@ -6,7 +6,7 @@ import { ThemeProvider, createTheme } from '@mui/material/styles';
 import CssBaseline from '@mui/material/CssBaseline';
 import { Toaster } from 'react-hot-toast';
 
-import App from './App';
+import App from './App.tsx';
 import './index.css';
 
 // Create Material-UI theme
