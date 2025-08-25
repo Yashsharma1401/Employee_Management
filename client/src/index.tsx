@@ -6,7 +6,8 @@ import { ThemeProvider, createTheme } from '@mui/material/styles';
 import CssBaseline from '@mui/material/CssBaseline';
 import { Toaster } from 'react-hot-toast';
 
-import App from './App';
+import App from './App.tsx';
+import { AuthProvider } from './contexts/AuthContext.tsx';
 import './index.css';
 
 // Create Material-UI theme
@@ -105,7 +106,9 @@ root.render(
       <QueryClientProvider client={queryClient}>
         <ThemeProvider theme={theme}>
           <CssBaseline />
-          <App />
+          <AuthProvider>
+            <App />
+          </AuthProvider>
           <Toaster
             position="top-right"
             toastOptions={{

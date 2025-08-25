@@ -23,7 +23,7 @@ import {
 import { useFormik } from 'formik';
 import * as Yup from 'yup';
 
-import { useAuth } from '../../contexts/AuthContext';
+import { useAuth } from '../../contexts/AuthContext.tsx';
 
 const validationSchema = Yup.object({
   email: Yup.string()

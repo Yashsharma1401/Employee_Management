@@ -33,7 +33,7 @@ import {
   Business,
 } from '@mui/icons-material';
 
-import { useAuth } from '../../contexts/AuthContext';
+import { useAuth } from '../../contexts/AuthContext.tsx';
 
 const drawerWidth = 280;
 

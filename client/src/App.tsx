@@ -2,21 +2,21 @@ import React from 'react';
 import { Routes, Route, Navigate } from 'react-router-dom';
 import { Box, CircularProgress } from '@mui/material';
 
-import { useAuth } from './contexts/AuthContext';
-import LoginPage from './pages/auth/LoginPage';
-import DashboardLayout from './components/layout/DashboardLayout';
-import ProtectedRoute from './components/auth/ProtectedRoute';
+import { useAuth } from './contexts/AuthContext.tsx';
+import LoginPage from './pages/auth/LoginPage.tsx';
+import DashboardLayout from './components/layout/DashboardLayout.tsx';
+import ProtectedRoute from './components/auth/ProtectedRoute.tsx';
 
 // Page imports
-import EmployeeDashboard from './pages/dashboard/EmployeeDashboard';
-import AdminDashboard from './pages/dashboard/AdminDashboard';
-import EmployeeList from './pages/employees/EmployeeList';
-import EmployeeProfile from './pages/employees/EmployeeProfile';
-import AttendanceView from './pages/attendance/AttendanceView';
-import LeaveManagement from './pages/leave/LeaveManagement';
-import PayrollView from './pages/payroll/PayrollView';
-import PerformanceView from './pages/performance/PerformanceView';
-import NotFound from './pages/NotFound';
+import EmployeeDashboard from './pages/dashboard/EmployeeDashboard.tsx';
+import AdminDashboard from './pages/dashboard/AdminDashboard.tsx';
+import EmployeeList from './pages/employees/EmployeeList.tsx';
+import EmployeeProfile from './pages/employees/EmployeeProfile.tsx';
+import AttendanceView from './pages/attendance/AttendanceView.tsx';
+import LeaveManagement from './pages/leave/LeaveManagement.tsx';
+import PayrollView from './pages/payroll/PayrollView.tsx';
+import PerformanceView from './pages/performance/PerformanceView.tsx';
+import NotFound from './pages/NotFound.tsx';
 
 const App: React.FC = () => {
   const { isLoading, isAuthenticated, user } = useAuth();

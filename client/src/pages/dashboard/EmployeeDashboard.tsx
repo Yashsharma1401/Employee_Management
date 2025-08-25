@@ -21,7 +21,7 @@ import {
   Warning,
 } from '@mui/icons-material';
 
-import { useAuth } from '../../contexts/AuthContext';
+import { useAuth } from '../../contexts/AuthContext.tsx';
 
 // Mock data for demo purposes
 const mockData = {

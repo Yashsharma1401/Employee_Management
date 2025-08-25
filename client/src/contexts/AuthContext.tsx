@@ -1,6 +1,6 @@
 import React, { createContext, useContext, useReducer, useEffect, ReactNode } from 'react';
-import { User, ApiResponse } from '../types';
-import { apiService, tokenUtils } from '../services/api';
+import { User, ApiResponse } from '../types/index.ts';
+import { apiService, tokenUtils } from '../services/api.ts';
 import toast from 'react-hot-toast';
 
 // Auth state interface
