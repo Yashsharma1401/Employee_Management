@@ -1,99 +1,20 @@
 import React from 'react';
-import { Routes, Route, Navigate } from 'react-router-dom';
-import { Box, CircularProgress } from '@mui/material';
-
-import { useAuth } from './contexts/AuthContext.tsx';
-import LoginPage from './pages/auth/LoginPage.tsx';
-import DashboardLayout from './components/layout/DashboardLayout.tsx';
-import ProtectedRoute from './components/auth/ProtectedRoute.tsx';
-
-// Page imports
-import EmployeeDashboard from './pages/dashboard/EmployeeDashboard.tsx';
-import AdminDashboard from './pages/dashboard/AdminDashboard.tsx';
-import EmployeeList from './pages/employees/EmployeeList.tsx';
-import EmployeeProfile from './pages/employees/EmployeeProfile.tsx';
-import AttendanceView from './pages/attendance/AttendanceView.tsx';
-import LeaveManagement from './pages/leave/LeaveManagement.tsx';
-import PayrollView from './pages/payroll/PayrollView.tsx';
-import PerformanceView from './pages/performance/PerformanceView.tsx';
-import NotFound from './pages/NotFound.tsx';
+import { Box, Typography, CircularProgress } from '@mui/material';
 
 const App: React.FC = () => {
-  const { isLoading, isAuthenticated, user } = useAuth();
-
-  // Show loading spinner while checking authentication
-  if (isLoading) {
-    return (
-      <Box
-        display="flex"
-        justifyContent="center"
-        alignItems="center"
-        minHeight="100vh"
-        className="bg-gray-50"
-      >
-        <CircularProgress size={40} />
-      </Box>
-    );
-  }
-
   return (
-    <Routes>
-      {/* Public routes */}
-      <Route
-        path="/login"
-        element={
-          !isAuthenticated ? (
-            <LoginPage />
-          ) : (
-            <Navigate to="/" replace />
-          )
-        }
-      />
-
-      {/* Protected routes */}
-      <Route
-        path="/*"
-        element={
-          <ProtectedRoute>
-            <DashboardLayout>
-              <Routes>
-                {/* Dashboard routes */}
-                <Route
-                  path="/"
-                  element={
-                    user?.role === 'employee' ? (
-                      <EmployeeDashboard />
-                    ) : (
-                      <AdminDashboard />
-                    )
-                  }
-                />
-
-                {/* Employee routes */}
-                <Route path="/employees" element={<EmployeeList />} />
-                <Route path="/employees/:id" element={<EmployeeProfile />} />
-                <Route path="/profile" element={<EmployeeProfile />} />
-
-                {/* Attendance routes */}
-                <Route path="/attendance" element={<AttendanceView />} />
-
-                {/* Leave routes */}
-                <Route path="/leave" element={<LeaveManagement />} />
-
-                {/* Payroll routes */}
-                <Route path="/payroll" element={<PayrollView />} />
-
-                {/* Performance routes */}
-                <Route path="/performance" element={<PerformanceView />} />
-
-                {/* 404 route */}
-                <Route path="*" element={<NotFound />} />
-              </Routes>
-            </DashboardLayout>
-          </ProtectedRoute>
-        }
-      />
-    </Routes>
+    <Box 
+      display="flex" 
+      justifyContent="center" 
+      alignItems="center" 
+      minHeight="100vh"
+      flexDirection="column"
+      gap={2}
+    >
+      <CircularProgress />
+      <Typography variant="h4">Employee Management System</Typography>
+      <Typography variant="body1">Loading...</Typography>
+    </Box>
   );
 };
 
