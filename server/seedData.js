@@ -9,9 +9,11 @@ const connectDB = async () => {
   try {
     await mongoose.connect(process.env.MONGODB_URI || 'mongodb://localhost:27017/employee_management');
     console.log('MongoDB Connected for seeding...');
+    return true;
   } catch (error) {
-    console.error('Database connection error:', error);
-    process.exit(1);
+    console.error('❌ Database connection error:', error.message);
+    console.log('⚠️  Seeding skipped - database not available');
+    return false;
   }
 };
 
