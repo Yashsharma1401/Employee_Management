@@ -25,9 +25,14 @@ const __dirname = path.dirname(__filename);
 // Connect to database
 connectDB();
 
-// Seed data in development
+// Seed data in development (optional, only if MongoDB is available)
 if (process.env.NODE_ENV === 'development') {
-  import('./seedData.js').catch(console.error);
+  setTimeout(() => {
+    import('./seedData.js').catch(() => {
+      console.log('⚠️  MongoDB seeding skipped - MongoDB may not be running locally');
+      console.log('📝 The app will work without seeded data, but you may need to create users manually');
+    });
+  }, 2000);
 }
 
 const app = express();
