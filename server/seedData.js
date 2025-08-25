@@ -236,14 +236,20 @@ const seedData = async () => {
     mongoose.connection.close();
     console.log('Seeding completed successfully!');
   } catch (error) {
-    console.error('Seeding error:', error);
-    process.exit(1);
+    console.error('Seeding error:', error.message || error);
+    console.log('⚠️  Application will continue without seeded data');
+    // Don't exit the process, let the app continue
   }
 };
 
 const run = async () => {
-  await connectDB();
-  await seedData();
+  const connected = await connectDB();
+  if (connected) {
+    await seedData();
+  }
 };
 
-run();
+run().catch(error => {
+  console.error('❌ Seeding failed:', error.message || error);
+  console.log('⚠️  MongoDB seeding skipped - database may not be available');
+});
