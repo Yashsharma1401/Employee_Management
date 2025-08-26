@@ -1,5 +1,7 @@
-import User from '../models/User.js';
-import Department from '../models/Department.js';
+import { db } from '../config/database.js';
+import { usersTable, departmentsTable, attendanceTable, leaveTable, payrollTable } from '../schema/index.js';
+import { eq, and, or, sql, desc, asc, like, ilike, count, inArray } from 'drizzle-orm';
+import bcrypt from 'bcryptjs';
 import { catchAsync, AppError } from '../middleware/errorHandler.js';
 
 // Get all employees
@@ -15,45 +17,90 @@ export const getAllEmployees = catchAsync(async (req, res, next) => {
     sortOrder = 'asc'
   } = req.query;
 
-  // Build query
-  const query = { status };
+  // Build base query conditions
+  let conditions = [eq(usersTable.status, status)];
 
-  // Search functionality
+  // Add search functionality
   if (search) {
-    query.$or = [
-      { firstName: { $regex: search, $options: 'i' } },
-      { lastName: { $regex: search, $options: 'i' } },
-      { email: { $regex: search, $options: 'i' } },
-      { employeeId: { $regex: search, $options: 'i' } },
-      { designation: { $regex: search, $options: 'i' } }
-    ];
+    conditions.push(
+      or(
+        ilike(usersTable.firstName, `%${search}%`),
+        ilike(usersTable.lastName, `%${search}%`),
+        ilike(usersTable.email, `%${search}%`),
+        ilike(usersTable.employeeId, `%${search}%`),
+        ilike(usersTable.designation, `%${search}%`)
+      )
+    );
   }
 
-  if (department) query.department = department;
-  if (role) query.role = role;
+  if (department) {
+    conditions.push(eq(usersTable.departmentId, parseInt(department)));
+  }
 
-  // Sorting
-  const sortOptions = {};
-  sortOptions[sortBy] = sortOrder === 'desc' ? -1 : 1;
+  if (role) {
+    conditions.push(eq(usersTable.role, role));
+  }
 
-  // Pagination
-  const skip = (page - 1) * limit;
+  // Calculate pagination
+  const offset = (page - 1) * limit;
 
-  const employees = await User.find(query)
-    .populate('department', 'name')
-    .populate('manager', 'firstName lastName')
-    .sort(sortOptions)
-    .skip(skip)
+  // Get total count
+  const totalCount = await db
+    .select({ count: count() })
+    .from(usersTable)
+    .where(and(...conditions));
+
+  const total = totalCount[0].count;
+
+  // Build sort order
+  const sortColumn = usersTable[sortBy] || usersTable.firstName;
+  const orderBy = sortOrder === 'desc' ? desc(sortColumn) : asc(sortColumn);
+
+  // Get employees with department and manager info
+  const employees = await db
+    .select({
+      id: usersTable.id,
+      firstName: usersTable.firstName,
+      lastName: usersTable.lastName,
+      email: usersTable.email,
+      phone: usersTable.phone,
+      employeeId: usersTable.employeeId,
+      role: usersTable.role,
+      designation: usersTable.designation,
+      status: usersTable.status,
+      joiningDate: usersTable.joiningDate,
+      basicSalary: usersTable.basicSalary,
+      allowances: usersTable.allowances,
+      deductions: usersTable.deductions,
+      departmentId: usersTable.departmentId,
+      managerId: usersTable.managerId,
+      profileImage: usersTable.profileImage,
+      leaveBalance: usersTable.leaveBalance,
+      createdAt: usersTable.createdAt,
+      departmentName: departmentsTable.name,
+      managerFirstName: sql`manager.first_name`,
+      managerLastName: sql`manager.last_name`
+    })
+    .from(usersTable)
+    .leftJoin(departmentsTable, eq(usersTable.departmentId, departmentsTable.id))
+    .leftJoin(sql`${usersTable} as manager`, sql`${usersTable.managerId} = manager.id`)
+    .where(and(...conditions))
+    .orderBy(orderBy)
     .limit(parseInt(limit))
-    .select('-password');
-
-  const total = await User.countDocuments(query);
+    .offset(offset);
 
   res.status(200).json({
     status: 'success',
     results: employees.length,
     data: {
-      employees,
+      employees: employees.map(emp => ({
+        ...emp,
+        department: { name: emp.departmentName },
+        manager: emp.managerFirstName ? {
+          firstName: emp.managerFirstName,
+          lastName: emp.managerLastName
+        } : null
+      })),
       pagination: {
         currentPage: parseInt(page),
         totalPages: Math.ceil(total / limit),
@@ -67,51 +114,172 @@ export const getAllEmployees = catchAsync(async (req, res, next) => {
 
 // Get single employee
 export const getEmployee = catchAsync(async (req, res, next) => {
-  const employee = await User.findById(req.params.id)
-    .populate('department', 'name description head')
-    .populate('manager', 'firstName lastName email designation')
-    .select('-password');
+  const employees = await db
+    .select({
+      id: usersTable.id,
+      firstName: usersTable.firstName,
+      lastName: usersTable.lastName,
+      email: usersTable.email,
+      phone: usersTable.phone,
+      employeeId: usersTable.employeeId,
+      role: usersTable.role,
+      designation: usersTable.designation,
+      status: usersTable.status,
+      joiningDate: usersTable.joiningDate,
+      dateOfBirth: usersTable.dateOfBirth,
+      address: usersTable.address,
+      emergencyContact: usersTable.emergencyContact,
+      basicSalary: usersTable.basicSalary,
+      allowances: usersTable.allowances,
+      deductions: usersTable.deductions,
+      departmentId: usersTable.departmentId,
+      managerId: usersTable.managerId,
+      profileImage: usersTable.profileImage,
+      leaveBalance: usersTable.leaveBalance,
+      documents: usersTable.documents,
+      lastLogin: usersTable.lastLogin,
+      createdAt: usersTable.createdAt,
+      updatedAt: usersTable.updatedAt,
+      departmentName: departmentsTable.name,
+      departmentDescription: departmentsTable.description,
+      departmentHeadId: departmentsTable.headId,
+      managerFirstName: sql`manager.first_name`,
+      managerLastName: sql`manager.last_name`,
+      managerEmail: sql`manager.email`,
+      managerDesignation: sql`manager.designation`
+    })
+    .from(usersTable)
+    .leftJoin(departmentsTable, eq(usersTable.departmentId, departmentsTable.id))
+    .leftJoin(sql`${usersTable} as manager`, sql`${usersTable.managerId} = manager.id`)
+    .where(eq(usersTable.id, parseInt(req.params.id)))
+    .limit(1);
 
-  if (!employee) {
+  if (employees.length === 0) {
     return next(new AppError('Employee not found', 404));
   }
+
+  const employee = employees[0];
 
   res.status(200).json({
     status: 'success',
     data: {
-      employee
+      employee: {
+        ...employee,
+        department: {
+          name: employee.departmentName,
+          description: employee.departmentDescription,
+          head: employee.departmentHeadId
+        },
+        manager: employee.managerFirstName ? {
+          firstName: employee.managerFirstName,
+          lastName: employee.managerLastName,
+          email: employee.managerEmail,
+          designation: employee.managerDesignation
+        } : null
+      }
     }
   });
 });
 
 // Create new employee
 export const createEmployee = catchAsync(async (req, res, next) => {
+  const {
+    firstName,
+    lastName,
+    email,
+    phone,
+    password = 'Welcome@123',
+    departmentId,
+    designation,
+    basicSalary,
+    allowances = 0,
+    deductions = 0,
+    role = 'employee',
+    status = 'active',
+    joiningDate,
+    managerId,
+    dateOfBirth,
+    address,
+    emergencyContact
+  } = req.body;
+
   // Check if department exists
-  if (req.body.department) {
-    const departmentExists = await Department.findById(req.body.department);
-    if (!departmentExists) {
+  if (departmentId) {
+    const departmentExists = await db
+      .select()
+      .from(departmentsTable)
+      .where(eq(departmentsTable.id, departmentId))
+      .limit(1);
+
+    if (departmentExists.length === 0) {
       return next(new AppError('Department not found', 400));
     }
   }
 
   // Check if manager exists (if provided)
-  if (req.body.manager) {
-    const managerExists = await User.findById(req.body.manager);
-    if (!managerExists) {
+  if (managerId) {
+    const managerExists = await db
+      .select()
+      .from(usersTable)
+      .where(eq(usersTable.id, managerId))
+      .limit(1);
+
+    if (managerExists.length === 0) {
       return next(new AppError('Manager not found', 400));
     }
   }
 
-  // Create employee with default password
-  const employeeData = {
-    ...req.body,
-    password: req.body.password || 'Welcome@123'
-  };
+  // Check if user already exists
+  const existingUser = await db
+    .select()
+    .from(usersTable)
+    .where(or(eq(usersTable.email, email), eq(usersTable.phone, phone)))
+    .limit(1);
 
-  const employee = await User.create(employeeData);
+  if (existingUser.length > 0) {
+    return next(new AppError('User with this email or phone already exists', 400));
+  }
 
+  // Hash password
+  const hashedPassword = await bcrypt.hash(password, parseInt(process.env.BCRYPT_ROUNDS) || 12);
+
+  // Generate employee ID
+  const userCount = await db
+    .select({ count: count() })
+    .from(usersTable);
+  
+  const year = new Date().getFullYear();
+  const employeeId = `EMP${year}${String(Number(userCount[0].count) + 1).padStart(4, '0')}`;
+
+  // Create employee
+  const newEmployee = await db
+    .insert(usersTable)
+    .values({
+      firstName,
+      lastName,
+      email,
+      phone,
+      password: hashedPassword,
+      employeeId,
+      departmentId,
+      designation,
+      basicSalary,
+      allowances,
+      deductions,
+      role,
+      status,
+      joiningDate: joiningDate ? new Date(joiningDate) : new Date(),
+      managerId,
+      dateOfBirth: dateOfBirth ? new Date(dateOfBirth) : null,
+      address,
+      emergencyContact
+    })
+    .returning();
+
+  const employee = newEmployee[0];
+  
   // Remove password from response
-  employee.password = undefined;
+  delete employee.password;
 
   res.status(201).json({
     status: 'success',
@@ -128,9 +296,9 @@ export const updateEmployee = catchAsync(async (req, res, next) => {
 
   // Fields that can be updated
   const allowedFields = [
-    'firstName', 'lastName', 'phone', 'department', 'designation',
-    'salary', 'role', 'status', 'manager', 'address', 'emergencyContact',
-    'dateOfBirth', 'leaveBalance'
+    'firstName', 'lastName', 'phone', 'departmentId', 'designation',
+    'basicSalary', 'allowances', 'deductions', 'role', 'status', 'managerId', 
+    'address', 'emergencyContact', 'dateOfBirth', 'leaveBalance'
   ];
 
   const updateData = {};
@@ -145,55 +313,107 @@ export const updateEmployee = catchAsync(async (req, res, next) => {
   }
 
   // Validate department if being updated
-  if (updateData.department) {
-    const departmentExists = await Department.findById(updateData.department);
-    if (!departmentExists) {
+  if (updateData.departmentId) {
+    const departmentExists = await db
+      .select()
+      .from(departmentsTable)
+      .where(eq(departmentsTable.id, updateData.departmentId))
+      .limit(1);
+
+    if (departmentExists.length === 0) {
       return next(new AppError('Department not found', 400));
     }
   }
 
   // Validate manager if being updated
-  if (updateData.manager) {
-    const managerExists = await User.findById(updateData.manager);
-    if (!managerExists) {
+  if (updateData.managerId) {
+    const managerExists = await db
+      .select()
+      .from(usersTable)
+      .where(eq(usersTable.id, updateData.managerId))
+      .limit(1);
+
+    if (managerExists.length === 0) {
       return next(new AppError('Manager not found', 400));
     }
   }
 
-  const employee = await User.findByIdAndUpdate(
-    id,
-    updateData,
-    {
-      new: true,
-      runValidators: true
-    }
-  )
-  .populate('department', 'name')
-  .populate('manager', 'firstName lastName')
-  .select('-password');
+  // Convert date strings to Date objects if present
+  if (updateData.dateOfBirth) {
+    updateData.dateOfBirth = new Date(updateData.dateOfBirth);
+  }
 
-  if (!employee) {
+  // Add updatedAt timestamp
+  updateData.updatedAt = new Date();
+
+  const updatedEmployees = await db
+    .update(usersTable)
+    .set(updateData)
+    .where(eq(usersTable.id, parseInt(id)))
+    .returning();
+
+  if (updatedEmployees.length === 0) {
     return next(new AppError('Employee not found', 404));
   }
+
+  // Get updated employee with relations
+  const employees = await db
+    .select({
+      id: usersTable.id,
+      firstName: usersTable.firstName,
+      lastName: usersTable.lastName,
+      email: usersTable.email,
+      phone: usersTable.phone,
+      employeeId: usersTable.employeeId,
+      role: usersTable.role,
+      designation: usersTable.designation,
+      status: usersTable.status,
+      joiningDate: usersTable.joiningDate,
+      basicSalary: usersTable.basicSalary,
+      allowances: usersTable.allowances,
+      deductions: usersTable.deductions,
+      departmentId: usersTable.departmentId,
+      managerId: usersTable.managerId,
+      departmentName: departmentsTable.name,
+      managerFirstName: sql`manager.first_name`,
+      managerLastName: sql`manager.last_name`
+    })
+    .from(usersTable)
+    .leftJoin(departmentsTable, eq(usersTable.departmentId, departmentsTable.id))
+    .leftJoin(sql`${usersTable} as manager`, sql`${usersTable.managerId} = manager.id`)
+    .where(eq(usersTable.id, parseInt(id)))
+    .limit(1);
+
+  const employee = employees[0];
 
   res.status(200).json({
     status: 'success',
     message: 'Employee updated successfully',
     data: {
-      employee
+      employee: {
+        ...employee,
+        department: { name: employee.departmentName },
+        manager: employee.managerFirstName ? {
+          firstName: employee.managerFirstName,
+          lastName: employee.managerLastName
+        } : null
+      }
     }
   });
 });
 
 // Delete employee (soft delete)
 export const deleteEmployee = catchAsync(async (req, res, next) => {
-  const employee = await User.findByIdAndUpdate(
-    req.params.id,
-    { status: 'terminated' },
-    { new: true }
-  );
+  const updatedEmployees = await db
+    .update(usersTable)
+    .set({ 
+      status: 'terminated',
+      updatedAt: new Date()
+    })
+    .where(eq(usersTable.id, parseInt(req.params.id)))
+    .returning();
 
-  if (!employee) {
+  if (updatedEmployees.length === 0) {
     return next(new AppError('Employee not found', 404));
   }
 
@@ -206,62 +426,82 @@ export const deleteEmployee = catchAsync(async (req, res, next) => {
 // Get employee dashboard stats
 export const getEmployeeDashboard = catchAsync(async (req, res, next) => {
   const { id } = req.params;
-
-  // Import models to avoid circular dependencies
-  const Attendance = (await import('../models/Attendance.js')).default;
-  const Leave = (await import('../models/Leave.js')).default;
-  const Payroll = (await import('../models/Payroll.js')).default;
+  const employeeId = parseInt(id);
 
   const currentMonth = new Date().getMonth() + 1;
   const currentYear = new Date().getFullYear();
 
   // Get employee details
-  const employee = await User.findById(id)
-    .populate('department', 'name')
-    .select('-password');
+  const employees = await db
+    .select({
+      id: usersTable.id,
+      firstName: usersTable.firstName,
+      lastName: usersTable.lastName,
+      email: usersTable.email,
+      employeeId: usersTable.employeeId,
+      role: usersTable.role,
+      designation: usersTable.designation,
+      status: usersTable.status,
+      departmentName: departmentsTable.name
+    })
+    .from(usersTable)
+    .leftJoin(departmentsTable, eq(usersTable.departmentId, departmentsTable.id))
+    .where(eq(usersTable.id, employeeId))
+    .limit(1);
 
-  if (!employee) {
+  if (employees.length === 0) {
     return next(new AppError('Employee not found', 404));
   }
 
+  const employee = employees[0];
+
   // Get attendance summary for current month
-  const attendanceSummary = await Attendance.aggregate([
-    {
-      $match: {
-        employee: employee._id,
-        $expr: {
-          $and: [
-            { $eq: [{ $month: "$date" }, currentMonth] },
-            { $eq: [{ $year: "$date" }, currentYear] }
-          ]
-        }
-      }
-    },
-    {
-      $group: {
-        _id: null,
-        totalDays: { $sum: 1 },
-        totalHours: { $sum: "$totalHours" },
-        presentDays: { $sum: { $cond: [{ $eq: ["$status", "present"] }, 1, 0] } },
-        lateDays: { $sum: { $cond: [{ $eq: ["$status", "late"] }, 1, 0] } }
-      }
-    }
-  ]);
+  const attendanceSummary = await db
+    .select({
+      totalDays: sql`COUNT(*)::int`,
+      totalHours: sql`COALESCE(SUM(total_hours), 0)::numeric`,
+      presentDays: sql`COUNT(CASE WHEN status = 'present' THEN 1 END)::int`,
+      lateDays: sql`COUNT(CASE WHEN status = 'late' THEN 1 END)::int`
+    })
+    .from(attendanceTable)
+    .where(
+      and(
+        eq(attendanceTable.employeeId, employeeId),
+        sql`EXTRACT(MONTH FROM date) = ${currentMonth}`,
+        sql`EXTRACT(YEAR FROM date) = ${currentYear}`
+      )
+    );
 
   // Get recent leave requests
-  const recentLeaves = await Leave.find({ employee: id })
-    .sort({ appliedDate: -1 })
-    .limit(5)
-    .select('leaveType startDate endDate status totalDays');
+  const recentLeaves = await db
+    .select({
+      id: leaveTable.id,
+      leaveType: leaveTable.leaveType,
+      startDate: leaveTable.startDate,
+      endDate: leaveTable.endDate,
+      status: leaveTable.status,
+      totalDays: leaveTable.totalDays
+    })
+    .from(leaveTable)
+    .where(eq(leaveTable.employeeId, employeeId))
+    .orderBy(desc(leaveTable.appliedDate))
+    .limit(5);
 
   // Get latest payroll
-  const latestPayroll = await Payroll.findOne({ employee: id })
-    .sort({ 'payPeriod.year': -1, 'payPeriod.month': -1 });
+  const latestPayroll = await db
+    .select()
+    .from(payrollTable)
+    .where(eq(payrollTable.employeeId, employeeId))
+    .orderBy(desc(payrollTable.endDate))
+    .limit(1);
 
   res.status(200).json({
     status: 'success',
     data: {
-      employee,
+      employee: {
+        ...employee,
+        department: { name: employee.departmentName }
+      },
       attendance: attendanceSummary[0] || {
         totalDays: 0,
         totalHours: 0,
@@ -269,28 +509,46 @@ export const getEmployeeDashboard = catchAsync(async (req, res, next) => {
         lateDays: 0
       },
       recentLeaves,
-      latestPayroll
+      latestPayroll: latestPayroll[0] || null
     }
   });
 });
 
 // Get team members (for managers)
 export const getTeamMembers = catchAsync(async (req, res, next) => {
-  const managerId = req.user._id;
+  const managerId = req.user.id;
 
-  const teamMembers = await User.find({ 
-    manager: managerId,
-    status: 'active'
-  })
-  .populate('department', 'name')
-  .select('-password')
-  .sort('firstName');
+  const teamMembers = await db
+    .select({
+      id: usersTable.id,
+      firstName: usersTable.firstName,
+      lastName: usersTable.lastName,
+      email: usersTable.email,
+      employeeId: usersTable.employeeId,
+      role: usersTable.role,
+      designation: usersTable.designation,
+      status: usersTable.status,
+      joiningDate: usersTable.joiningDate,
+      departmentName: departmentsTable.name
+    })
+    .from(usersTable)
+    .leftJoin(departmentsTable, eq(usersTable.departmentId, departmentsTable.id))
+    .where(
+      and(
+        eq(usersTable.managerId, managerId),
+        eq(usersTable.status, 'active')
+      )
+    )
+    .orderBy(asc(usersTable.firstName));
 
   res.status(200).json({
     status: 'success',
     results: teamMembers.length,
     data: {
-      teamMembers
+      teamMembers: teamMembers.map(member => ({
+        ...member,
+        department: { name: member.departmentName }
+      }))
     }
   });
 });
@@ -303,7 +561,7 @@ export const bulkUpdateEmployees = catchAsync(async (req, res, next) => {
     return next(new AppError('Please provide employee IDs', 400));
   }
 
-  const allowedFields = ['status', 'department', 'salary', 'role'];
+  const allowedFields = ['status', 'departmentId', 'basicSalary', 'role'];
   const filteredUpdateData = {};
 
   Object.keys(updateData).forEach(key => {
@@ -316,16 +574,20 @@ export const bulkUpdateEmployees = catchAsync(async (req, res, next) => {
     return next(new AppError('No valid fields to update', 400));
   }
 
-  const result = await User.updateMany(
-    { _id: { $in: employeeIds } },
-    filteredUpdateData
-  );
+  // Add updatedAt timestamp
+  filteredUpdateData.updatedAt = new Date();
+
+  const result = await db
+    .update(usersTable)
+    .set(filteredUpdateData)
+    .where(inArray(usersTable.id, employeeIds.map(id => parseInt(id))))
+    .returning({ id: usersTable.id });
 
   res.status(200).json({
     status: 'success',
-    message: `${result.modifiedCount} employees updated successfully`,
+    message: `${result.length} employees updated successfully`,
     data: {
-      modifiedCount: result.modifiedCount
+      modifiedCount: result.length
     }
   });
 });
