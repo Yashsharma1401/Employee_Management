@@ -9,13 +9,13 @@ import {
   getTeamMembers,
   bulkUpdateEmployees
 } from '../controllers/employeeController.js';
-import { protect, authorize, canAccessEmployee } from '../middleware/auth.js';
+import { authenticate, authorize, canModifyEmployee } from '../middleware/auth.js';
 import { validateRegistration } from '../middleware/validation.js';
 
 const router = express.Router();
 
 // Protect all routes
-router.use(protect);
+router.use(authenticate);
 
 // Routes accessible by all authenticated users
 router.get('/team', getTeamMembers); // Get team members for managers
