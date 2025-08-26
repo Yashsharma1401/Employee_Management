@@ -1,6 +1,5 @@
 import { drizzle } from "drizzle-orm/neon-http";
 import { neon } from "@neondatabase/serverless";
-import * as schema from '../schema/index.js';
 import dotenv from 'dotenv';
 
 // Load environment variables
@@ -16,7 +15,7 @@ if (!process.env.DATABASE_URL) {
 const sql = neon(process.env.DATABASE_URL);
 
 // Create Drizzle instance with Neon HTTP adapter
-export const db = drizzle({ client: sql, schema });
+export const db = drizzle({ client: sql });
 
 // Test connection function
 export const connectDB = async () => {
