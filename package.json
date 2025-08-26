@@ -13,7 +13,7 @@
     "install-client": "cd client && npm install",
     "heroku-postbuild": "npm run install-client && npm run build",
     "seed": "node server/seedData.js",
-    "db:seed": "node simple-seed.js",
+    "db:seed": "node sql-seed.js",
     "db:generate": "node scripts/generate-migration.js",
     "db:migrate": "node simple-migrate.js",
     "db:studio": "drizzle-kit studio"
