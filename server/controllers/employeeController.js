@@ -1,5 +1,5 @@
 import { db } from '../config/database.js';
-import { usersTable, departmentsTable, attendanceTable, leaveTable, payrollTable } from '../schema/index.js';
+import { usersTable, departmentsTable, attendanceTable, leaveTable, payrollTable } from '../schema.js';
 import { eq, and, or, sql, desc, asc, like, ilike, count, inArray } from 'drizzle-orm';
 import bcrypt from 'bcryptjs';
 import { catchAsync, AppError } from '../middleware/errorHandler.js';

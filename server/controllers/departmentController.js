@@ -1,5 +1,5 @@
 import { db } from '../config/database.js';
-import { departmentsTable, usersTable } from '../schema/index.js';
+import { departmentsTable, usersTable } from '../schema.js';
 import { eq, and, or, sql, desc, asc, count } from 'drizzle-orm';
 import { catchAsync, AppError } from '../middleware/errorHandler.js';
 

@@ -1,6 +1,6 @@
 import jwt from 'jsonwebtoken';
 import { db } from '../config/database.js';
-import { usersTable, departmentsTable } from '../schema/index.js';
+import { usersTable, departmentsTable } from '../schema.js';
 import { eq, sql } from 'drizzle-orm';
 import { catchAsync, AppError } from './errorHandler.js';
 

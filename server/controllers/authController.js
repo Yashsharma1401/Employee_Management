@@ -1,5 +1,5 @@
 import { db } from '../config/database.js';
-import { usersTable, departmentsTable, attendanceTable, leaveTable, performanceTable } from '../schema/index.js';
+import { usersTable, departmentsTable, attendanceTable, leaveTable, performanceTable } from '../schema.js';
 import { eq, and, or, sql, desc, gte, lte } from 'drizzle-orm';
 import bcrypt from 'bcryptjs';
 import { generateToken } from '../middleware/auth.js';
