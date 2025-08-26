@@ -1,15 +1,16 @@
-import { 
-  pgTable, 
-  serial, 
-  integer, 
-  timestamp, 
+import {
+  pgTable,
+  serial,
+  integer,
+  timestamp,
   numeric,
   varchar,
   text,
   boolean,
   jsonb,
   index,
-  unique
+  unique,
+  pgEnum
 } from 'drizzle-orm/pg-core';
 import { usersTable } from './users';
 
@@ -43,8 +44,6 @@ export const attendanceTable = pgTable('attendance', {
   employeeDateUnique: unique('attendance_employee_date_unique').on(table.employeeId, table.date),
 }));
 
-// Import enum
-import { pgEnum } from 'drizzle-orm/pg-core';
 
 // Export types
 export type Attendance = typeof attendanceTable.$inferSelect;
