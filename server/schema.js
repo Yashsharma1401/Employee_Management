@@ -204,16 +204,7 @@ export const performanceTable = pgTable('performance', {
   dateRangeIdx: index('performance_date_range_idx').on(table.startDate, table.endDate),
 }));
 
-// Export types
-export type User = typeof usersTable.$inferSelect;
-export type NewUser = typeof usersTable.$inferInsert;
-export type Department = typeof departmentsTable.$inferSelect;
-export type NewDepartment = typeof departmentsTable.$inferInsert;
-export type Attendance = typeof attendanceTable.$inferSelect;
-export type NewAttendance = typeof attendanceTable.$inferInsert;
-export type Leave = typeof leaveTable.$inferSelect;
-export type NewLeave = typeof leaveTable.$inferInsert;
-export type Payroll = typeof payrollTable.$inferSelect;
-export type NewPayroll = typeof payrollTable.$inferInsert;
-export type Performance = typeof performanceTable.$inferSelect;
-export type NewPerformance = typeof performanceTable.$inferInsert;
+// Table schemas exported above
+// Types can be inferred in TypeScript files using:
+// type User = typeof usersTable.$inferSelect;
+// type NewUser = typeof usersTable.$inferInsert;
