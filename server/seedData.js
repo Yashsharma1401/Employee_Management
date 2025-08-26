@@ -1,255 +1,318 @@
-import mongoose from 'mongoose';
+import { db } from './config/database.js';
+import { departmentsTable, usersTable } from './schema/index.js';
+import { eq } from 'drizzle-orm';
+import bcrypt from 'bcryptjs';
 import dotenv from 'dotenv';
-import User from './models/User.js';
-import Department from './models/Department.js';
 
+// Load environment variables
 dotenv.config();
-
-const connectDB = async () => {
-  try {
-    await mongoose.connect(process.env.MONGODB_URI || 'mongodb://localhost:27017/employee_management');
-    console.log('MongoDB Connected for seeding...');
-    return true;
-  } catch (error) {
-    console.error('❌ Database connection error:', error.message);
-    console.log('⚠️  Seeding skipped - database not available');
-    return false;
-  }
-};
 
 const seedData = async () => {
   try {
-    // Clear existing data
-    await Department.deleteMany({});
-    await User.deleteMany({});
+    console.log('🌱 Starting database seeding...');
 
-    console.log('Existing data cleared...');
+    // Check if data already exists
+    const existingDepartments = await db.select().from(departmentsTable).limit(1);
+    if (existingDepartments.length > 0) {
+      console.log('📦 Database already seeded. Skipping...');
+      return;
+    }
 
-    // Create Departments
-    const departments = await Department.create([
-      {
-        name: 'Information Technology',
-        description: 'Software development and IT infrastructure',
-        budget: 500000,
-        location: 'Building A, Floor 3',
-      },
-      {
-        name: 'Human Resources',
-        description: 'Employee relations and talent management',
-        budget: 200000,
-        location: 'Building A, Floor 1',
-      },
-      {
-        name: 'Finance',
-        description: 'Financial planning and accounting',
-        budget: 300000,
-        location: 'Building A, Floor 2',
-      },
-      {
-        name: 'Marketing',
-        description: 'Brand promotion and customer engagement',
-        budget: 250000,
-        location: 'Building B, Floor 1',
-      },
-      {
-        name: 'Operations',
-        description: 'Business operations and logistics',
-        budget: 350000,
-        location: 'Building B, Floor 2',
-      },
-    ]);
-
-    console.log('Departments created...');
-
-    // Create Users
-    const users = await User.create([
-      // Super Admin
-      {
-        firstName: 'System',
-        lastName: 'Administrator',
-        email: 'admin@ems.com',
-        phone: '+1234567890',
-        password: 'admin123',
-        employeeId: 'EMP20240001',
-        role: 'super_admin',
-        department: departments[0]._id,
-        designation: 'System Administrator',
-        salary: {
-          basic: 150000,
-          allowances: 30000,
-          deductions: 15000,
+    // Create departments
+    console.log('📁 Creating departments...');
+    const departments = await db
+      .insert(departmentsTable)
+      .values([
+        {
+          name: 'Information Technology',
+          description: 'Responsible for all technology infrastructure and software development',
+          budget: 500000,
+          location: 'Building A, Floor 3',
+          establishedDate: new Date('2020-01-01')
         },
-        joiningDate: new Date('2024-01-01'),
-        address: {
-          street: '123 Admin Street',
-          city: 'Tech City',
-          state: 'CA',
-          zipCode: '12345',
-          country: 'USA',
+        {
+          name: 'Human Resources',
+          description: 'Manages employee relations, recruitment, and organizational development',
+          budget: 200000,
+          location: 'Building B, Floor 1',
+          establishedDate: new Date('2020-01-01')
         },
-      },
-      // HR Manager
-      {
-        firstName: 'Sarah',
-        lastName: 'Johnson',
-        email: 'sarah.johnson@ems.com',
-        phone: '+1234567891',
-        password: 'hr123',
-        employeeId: 'EMP20240002',
-        role: 'hr',
-        department: departments[1]._id,
-        designation: 'HR Manager',
-        salary: {
-          basic: 80000,
+        {
+          name: 'Finance',
+          description: 'Handles financial planning, accounting, and budgeting',
+          budget: 300000,
+          location: 'Building B, Floor 2',
+          establishedDate: new Date('2020-01-01')
+        },
+        {
+          name: 'Marketing',
+          description: 'Develops marketing strategies and manages brand communications',
+          budget: 250000,
+          location: 'Building A, Floor 2',
+          establishedDate: new Date('2020-01-01')
+        },
+        {
+          name: 'Sales',
+          description: 'Drives revenue growth through client acquisition and relationship management',
+          budget: 400000,
+          location: 'Building A, Floor 1',
+          establishedDate: new Date('2020-01-01')
+        }
+      ])
+      .returning();
+
+    console.log(`✅ Created ${departments.length} departments`);
+
+    // Create users
+    console.log('👥 Creating users...');
+    const hashedPassword = await bcrypt.hash('Welcome@123', 12);
+
+    const users = await db
+      .insert(usersTable)
+      .values([
+        // Super Admin
+        {
+          firstName: 'System',
+          lastName: 'Administrator',
+          email: 'admin@company.com',
+          phone: '+1234567890',
+          password: hashedPassword,
+          employeeId: 'EMP20240001',
+          role: 'super_admin',
+          departmentId: departments.find(d => d.name === 'Information Technology').id,
+          designation: 'System Administrator',
+          basicSalary: 120000,
+          allowances: 20000,
+          deductions: 5000,
+          status: 'active',
+          joiningDate: new Date('2020-01-01'),
+          leaveBalance: { annual: 25, sick: 15, personal: 10 }
+        },
+        // HR Admin
+        {
+          firstName: 'Sarah',
+          lastName: 'Johnson',
+          email: 'sarah.johnson@company.com',
+          phone: '+1234567891',
+          password: hashedPassword,
+          employeeId: 'EMP20240002',
+          role: 'admin',
+          departmentId: departments.find(d => d.name === 'Human Resources').id,
+          designation: 'HR Director',
+          basicSalary: 95000,
           allowances: 15000,
-          deductions: 8000,
+          deductions: 3000,
+          status: 'active',
+          joiningDate: new Date('2020-02-01'),
+          leaveBalance: { annual: 25, sick: 15, personal: 10 }
         },
-        joiningDate: new Date('2024-01-15'),
-        address: {
-          street: '456 HR Avenue',
-          city: 'Tech City',
-          state: 'CA',
-          zipCode: '12345',
-          country: 'USA',
+        // IT Manager
+        {
+          firstName: 'Michael',
+          lastName: 'Chen',
+          email: 'michael.chen@company.com',
+          phone: '+1234567892',
+          password: hashedPassword,
+          employeeId: 'EMP20240003',
+          role: 'manager',
+          departmentId: departments.find(d => d.name === 'Information Technology').id,
+          designation: 'IT Manager',
+          basicSalary: 85000,
+          allowances: 12000,
+          deductions: 2500,
+          status: 'active',
+          joiningDate: new Date('2020-03-01'),
+          leaveBalance: { annual: 22, sick: 12, personal: 8 }
         },
-      },
-      // IT Manager
-      {
-        firstName: 'John',
-        lastName: 'Smith',
-        email: 'john.smith@ems.com',
-        phone: '+1234567892',
-        password: 'manager123',
-        employeeId: 'EMP20240003',
-        role: 'manager',
-        department: departments[0]._id,
-        designation: 'IT Manager',
-        salary: {
-          basic: 90000,
-          allowances: 18000,
-          deductions: 9000,
-        },
-        joiningDate: new Date('2024-02-01'),
-        address: {
-          street: '789 Tech Boulevard',
-          city: 'Tech City',
-          state: 'CA',
-          zipCode: '12345',
-          country: 'USA',
-        },
-      },
-      // Employee 1
-      {
-        firstName: 'Alice',
-        lastName: 'Williams',
-        email: 'employee@ems.com',
-        phone: '+1234567893',
-        password: 'emp123',
-        employeeId: 'EMP20240004',
-        role: 'employee',
-        department: departments[0]._id,
-        designation: 'Software Developer',
-        salary: {
-          basic: 75000,
+        // Finance Manager
+        {
+          firstName: 'Emily',
+          lastName: 'Davis',
+          email: 'emily.davis@company.com',
+          phone: '+1234567893',
+          password: hashedPassword,
+          employeeId: 'EMP20240004',
+          role: 'manager',
+          departmentId: departments.find(d => d.name === 'Finance').id,
+          designation: 'Finance Manager',
+          basicSalary: 80000,
           allowances: 10000,
-          deductions: 7500,
+          deductions: 2000,
+          status: 'active',
+          joiningDate: new Date('2020-04-01'),
+          leaveBalance: { annual: 22, sick: 12, personal: 8 }
         },
-        joiningDate: new Date('2024-03-01'),
-        address: {
-          street: '321 Developer Lane',
-          city: 'Tech City',
-          state: 'CA',
-          zipCode: '12345',
-          country: 'USA',
-        },
-      },
-      // Employee 2
-      {
-        firstName: 'Bob',
-        lastName: 'Brown',
-        email: 'bob.brown@ems.com',
-        phone: '+1234567894',
-        password: 'emp123',
-        employeeId: 'EMP20240005',
-        role: 'employee',
-        department: departments[2]._id,
-        designation: 'Financial Analyst',
-        salary: {
-          basic: 65000,
+        // Software Developer
+        {
+          firstName: 'David',
+          lastName: 'Wilson',
+          email: 'david.wilson@company.com',
+          phone: '+1234567894',
+          password: hashedPassword,
+          employeeId: 'EMP20240005',
+          role: 'employee',
+          departmentId: departments.find(d => d.name === 'Information Technology').id,
+          designation: 'Senior Software Developer',
+          managerId: 3, // Michael Chen
+          basicSalary: 75000,
           allowances: 8000,
-          deductions: 6500,
+          deductions: 1500,
+          status: 'active',
+          joiningDate: new Date('2021-01-15'),
+          leaveBalance: { annual: 21, sick: 10, personal: 5 }
         },
-        joiningDate: new Date('2024-03-15'),
-        address: {
-          street: '654 Finance Street',
-          city: 'Tech City',
-          state: 'CA',
-          zipCode: '12345',
-          country: 'USA',
+        // HR Specialist
+        {
+          firstName: 'Lisa',
+          lastName: 'Brown',
+          email: 'lisa.brown@company.com',
+          phone: '+1234567895',
+          password: hashedPassword,
+          employeeId: 'EMP20240006',
+          role: 'hr',
+          departmentId: departments.find(d => d.name === 'Human Resources').id,
+          designation: 'HR Specialist',
+          managerId: 2, // Sarah Johnson
+          basicSalary: 60000,
+          allowances: 6000,
+          deductions: 1200,
+          status: 'active',
+          joiningDate: new Date('2021-03-01'),
+          leaveBalance: { annual: 21, sick: 10, personal: 5 }
         },
-      },
-      // Employee 3
-      {
-        firstName: 'Carol',
-        lastName: 'Davis',
-        email: 'carol.davis@ems.com',
-        phone: '+1234567895',
-        password: 'emp123',
-        employeeId: 'EMP20240006',
-        role: 'employee',
-        department: departments[3]._id,
-        designation: 'Marketing Specialist',
-        salary: {
-          basic: 60000,
-          allowances: 7000,
-          deductions: 6000,
+        // Marketing Specialist
+        {
+          firstName: 'John',
+          lastName: 'Martinez',
+          email: 'john.martinez@company.com',
+          phone: '+1234567896',
+          password: hashedPassword,
+          employeeId: 'EMP20240007',
+          role: 'employee',
+          departmentId: departments.find(d => d.name === 'Marketing').id,
+          designation: 'Marketing Specialist',
+          basicSalary: 55000,
+          allowances: 5000,
+          deductions: 1000,
+          status: 'active',
+          joiningDate: new Date('2021-06-01'),
+          leaveBalance: { annual: 21, sick: 10, personal: 5 }
         },
-        joiningDate: new Date('2024-04-01'),
-        address: {
-          street: '987 Marketing Plaza',
-          city: 'Tech City',
-          state: 'CA',
-          zipCode: '12345',
-          country: 'USA',
+        // Sales Representative
+        {
+          firstName: 'Jessica',
+          lastName: 'Taylor',
+          email: 'jessica.taylor@company.com',
+          phone: '+1234567897',
+          password: hashedPassword,
+          employeeId: 'EMP20240008',
+          role: 'employee',
+          departmentId: departments.find(d => d.name === 'Sales').id,
+          designation: 'Sales Representative',
+          basicSalary: 50000,
+          allowances: 8000,
+          deductions: 1000,
+          status: 'active',
+          joiningDate: new Date('2021-09-01'),
+          leaveBalance: { annual: 21, sick: 10, personal: 5 }
         },
-      },
-    ]);
+        // Junior Developer
+        {
+          firstName: 'Alex',
+          lastName: 'Rodriguez',
+          email: 'alex.rodriguez@company.com',
+          phone: '+1234567898',
+          password: hashedPassword,
+          employeeId: 'EMP20240009',
+          role: 'employee',
+          departmentId: departments.find(d => d.name === 'Information Technology').id,
+          designation: 'Junior Software Developer',
+          managerId: 3, // Michael Chen
+          basicSalary: 45000,
+          allowances: 4000,
+          deductions: 800,
+          status: 'active',
+          joiningDate: new Date('2022-01-01'),
+          leaveBalance: { annual: 21, sick: 10, personal: 5 }
+        },
+        // Accountant
+        {
+          firstName: 'Maria',
+          lastName: 'Garcia',
+          email: 'maria.garcia@company.com',
+          phone: '+1234567899',
+          password: hashedPassword,
+          employeeId: 'EMP20240010',
+          role: 'employee',
+          departmentId: departments.find(d => d.name === 'Finance').id,
+          designation: 'Senior Accountant',
+          managerId: 4, // Emily Davis
+          basicSalary: 58000,
+          allowances: 5500,
+          deductions: 1100,
+          status: 'active',
+          joiningDate: new Date('2022-03-01'),
+          leaveBalance: { annual: 21, sick: 10, personal: 5 }
+        }
+      ])
+      .returning();
 
-    // Set managers
-    const itManager = users.find(u => u.email === 'john.smith@ems.com');
-    
-    // Update employees with managers
-    await User.findByIdAndUpdate(users[3]._id, { manager: itManager._id });
-    
+    console.log(`✅ Created ${users.length} users`);
+
     // Update department heads
-    await Department.findByIdAndUpdate(departments[0]._id, { head: itManager._id });
-    await Department.findByIdAndUpdate(departments[1]._id, { head: users[1]._id });
+    console.log('👑 Assigning department heads...');
+    
+    await db
+      .update(departmentsTable)
+      .set({ headId: users.find(u => u.email === 'michael.chen@company.com').id })
+      .where(eq(departmentsTable.name, 'Information Technology'));
 
-    console.log('Users created and managers assigned...');
-    console.log('\n=== DEMO CREDENTIALS ===');
-    console.log('Admin: admin@ems.com / admin123');
-    console.log('HR: sarah.johnson@ems.com / hr123');
-    console.log('Manager: john.smith@ems.com / manager123');
-    console.log('Employee: employee@ems.com / emp123');
-    console.log('========================\n');
+    await db
+      .update(departmentsTable)
+      .set({ headId: users.find(u => u.email === 'sarah.johnson@company.com').id })
+      .where(eq(departmentsTable.name, 'Human Resources'));
 
-    mongoose.connection.close();
-    console.log('Seeding completed successfully!');
+    await db
+      .update(departmentsTable)
+      .set({ headId: users.find(u => u.email === 'emily.davis@company.com').id })
+      .where(eq(departmentsTable.name, 'Finance'));
+
+    console.log('✅ Department heads assigned');
+
+    console.log('🎉 Database seeding completed successfully!');
+    console.log('\n📋 Default Login Credentials:');
+    console.log('================================');
+    console.log('Super Admin:');
+    console.log('  Email: admin@company.com');
+    console.log('  Password: Welcome@123');
+    console.log('\nHR Admin:');
+    console.log('  Email: sarah.johnson@company.com');
+    console.log('  Password: Welcome@123');
+    console.log('\nManager:');
+    console.log('  Email: michael.chen@company.com');
+    console.log('  Password: Welcome@123');
+    console.log('\nEmployee:');
+    console.log('  Email: david.wilson@company.com');
+    console.log('  Password: Welcome@123');
+    console.log('================================\n');
+
   } catch (error) {
-    console.error('Seeding error:', error.message || error);
-    console.log('⚠️  Application will continue without seeded data');
-    // Don't exit the process, let the app continue
+    console.error('❌ Error seeding database:', error);
+    throw error;
   }
 };
 
-const run = async () => {
-  const connected = await connectDB();
-  if (connected) {
-    await seedData();
-  }
-};
+// Run seeding if called directly
+if (import.meta.url === `file://${process.argv[1]}`) {
+  seedData()
+    .then(() => {
+      console.log('✅ Seeding completed');
+      process.exit(0);
+    })
+    .catch((error) => {
+      console.error('❌ Seeding failed:', error);
+      process.exit(1);
+    });
+}
 
-run().catch(error => {
-  console.error('❌ Seeding failed:', error.message || error);
-  console.log('⚠️  MongoDB seeding skipped - database may not be available');
-});
+export default seedData;
