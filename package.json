@@ -12,36 +12,29 @@
     "start": "node index.js",
     "install-client": "cd client && npm install",
     "heroku-postbuild": "npm run install-client && npm run build",
-    "seed": "node server/seedData.js"
+    "seed": "node server/seedData.js",
+    "db:generate": "node scripts/generate-migration.js",
+    "db:migrate": "node scripts/migrate.js",
+    "db:studio": "drizzle-kit studio"
   },
-  "keywords": [
-    "employee",
-    "management",
-    "system",
-    "MERN",
-    "react",
-    "mongodb"
-  ],
+  "keywords": ["employee", "management", "system", "MERN", "react", "mongodb"],
   "author": "Yash Sharma",
   "license": "MIT",
   "dependencies": {
-    "@neondatabase/serverless": "^1.0.1",
-    "bcryptjs": "^2.4.3",
-    "cors": "^2.8.5",
-    "dotenv": "^16.6.1",
-    "drizzle-orm": "^0.44.5",
     "express": "^4.18.2",
-    "express-rate-limit": "^6.9.0",
+    "mongoose": "^7.5.0",
+    "bcryptjs": "^2.4.3",
+    "jsonwebtoken": "^9.0.2",
+    "cors": "^2.8.5",
+    "dotenv": "^16.3.1",
+    "multer": "^1.4.5-lts.1",
+    "moment": "^2.29.4",
     "express-validator": "^7.0.1",
     "helmet": "^7.0.0",
-    "jsonwebtoken": "^9.0.2",
-    "moment": "^2.29.4",
-    "mongoose": "^7.5.0",
-    "multer": "^1.4.5-lts.1"
+    "express-rate-limit": "^6.9.0"
   },
   "devDependencies": {
-    "concurrently": "^8.2.0",
-    "drizzle-kit": "^0.31.4",
-    "nodemon": "^3.0.1"
+    "nodemon": "^3.0.1",
+    "concurrently": "^8.2.0"
   }
 }
