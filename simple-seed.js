@@ -1,11 +1,16 @@
-import { db } from './config/database.js';
-import { departmentsTable, usersTable } from './schema/index.js';
+import { drizzle } from "drizzle-orm/neon-http";
+import { neon } from "@neondatabase/serverless";
+import { departmentsTable, usersTable } from './server/schema/index.js';
 import { eq } from 'drizzle-orm';
 import bcrypt from 'bcryptjs';
 import dotenv from 'dotenv';
 
 // Load environment variables
 dotenv.config();
+
+// Create database connection
+const sql = neon(process.env.DATABASE_URL);
+const db = drizzle({ client: sql });
 
 const seedData = async () => {
   try {
@@ -26,35 +31,35 @@ const seedData = async () => {
         {
           name: 'Information Technology',
           description: 'Responsible for all technology infrastructure and software development',
-          budget: 500000,
+          budget: '500000',
           location: 'Building A, Floor 3',
           establishedDate: new Date('2020-01-01')
         },
         {
           name: 'Human Resources',
           description: 'Manages employee relations, recruitment, and organizational development',
-          budget: 200000,
+          budget: '200000',
           location: 'Building B, Floor 1',
           establishedDate: new Date('2020-01-01')
         },
         {
           name: 'Finance',
           description: 'Handles financial planning, accounting, and budgeting',
-          budget: 300000,
+          budget: '300000',
           location: 'Building B, Floor 2',
           establishedDate: new Date('2020-01-01')
         },
         {
           name: 'Marketing',
           description: 'Develops marketing strategies and manages brand communications',
-          budget: 250000,
+          budget: '250000',
           location: 'Building A, Floor 2',
           establishedDate: new Date('2020-01-01')
         },
         {
           name: 'Sales',
           description: 'Drives revenue growth through client acquisition and relationship management',
-          budget: 400000,
+          budget: '400000',
           location: 'Building A, Floor 1',
           establishedDate: new Date('2020-01-01')
         }
@@ -81,9 +86,9 @@ const seedData = async () => {
           role: 'super_admin',
           departmentId: departments.find(d => d.name === 'Information Technology').id,
           designation: 'System Administrator',
-          basicSalary: 120000,
-          allowances: 20000,
-          deductions: 5000,
+          basicSalary: '120000',
+          allowances: '20000',
+          deductions: '5000',
           status: 'active',
           joiningDate: new Date('2020-01-01'),
           leaveBalance: { annual: 25, sick: 15, personal: 10 }
@@ -99,9 +104,9 @@ const seedData = async () => {
           role: 'admin',
           departmentId: departments.find(d => d.name === 'Human Resources').id,
           designation: 'HR Director',
-          basicSalary: 95000,
-          allowances: 15000,
-          deductions: 3000,
+          basicSalary: '95000',
+          allowances: '15000',
+          deductions: '3000',
           status: 'active',
           joiningDate: new Date('2020-02-01'),
           leaveBalance: { annual: 25, sick: 15, personal: 10 }
@@ -117,32 +122,14 @@ const seedData = async () => {
           role: 'manager',
           departmentId: departments.find(d => d.name === 'Information Technology').id,
           designation: 'IT Manager',
-          basicSalary: 85000,
-          allowances: 12000,
-          deductions: 2500,
+          basicSalary: '85000',
+          allowances: '12000',
+          deductions: '2500',
           status: 'active',
           joiningDate: new Date('2020-03-01'),
           leaveBalance: { annual: 22, sick: 12, personal: 8 }
         },
-        // Finance Manager
-        {
-          firstName: 'Emily',
-          lastName: 'Davis',
-          email: 'emily.davis@company.com',
-          phone: '+1234567893',
-          password: hashedPassword,
-          employeeId: 'EMP20240004',
-          role: 'manager',
-          departmentId: departments.find(d => d.name === 'Finance').id,
-          designation: 'Finance Manager',
-          basicSalary: 80000,
-          allowances: 10000,
-          deductions: 2000,
-          status: 'active',
-          joiningDate: new Date('2020-04-01'),
-          leaveBalance: { annual: 22, sick: 12, personal: 8 }
-        },
-        // Software Developer
+        // Employee
         {
           firstName: 'David',
           lastName: 'Wilson',
@@ -154,104 +141,11 @@ const seedData = async () => {
           departmentId: departments.find(d => d.name === 'Information Technology').id,
           designation: 'Senior Software Developer',
           managerId: 3, // Michael Chen
-          basicSalary: 75000,
-          allowances: 8000,
-          deductions: 1500,
+          basicSalary: '75000',
+          allowances: '8000',
+          deductions: '1500',
           status: 'active',
           joiningDate: new Date('2021-01-15'),
-          leaveBalance: { annual: 21, sick: 10, personal: 5 }
-        },
-        // HR Specialist
-        {
-          firstName: 'Lisa',
-          lastName: 'Brown',
-          email: 'lisa.brown@company.com',
-          phone: '+1234567895',
-          password: hashedPassword,
-          employeeId: 'EMP20240006',
-          role: 'hr',
-          departmentId: departments.find(d => d.name === 'Human Resources').id,
-          designation: 'HR Specialist',
-          managerId: 2, // Sarah Johnson
-          basicSalary: 60000,
-          allowances: 6000,
-          deductions: 1200,
-          status: 'active',
-          joiningDate: new Date('2021-03-01'),
-          leaveBalance: { annual: 21, sick: 10, personal: 5 }
-        },
-        // Marketing Specialist
-        {
-          firstName: 'John',
-          lastName: 'Martinez',
-          email: 'john.martinez@company.com',
-          phone: '+1234567896',
-          password: hashedPassword,
-          employeeId: 'EMP20240007',
-          role: 'employee',
-          departmentId: departments.find(d => d.name === 'Marketing').id,
-          designation: 'Marketing Specialist',
-          basicSalary: 55000,
-          allowances: 5000,
-          deductions: 1000,
-          status: 'active',
-          joiningDate: new Date('2021-06-01'),
-          leaveBalance: { annual: 21, sick: 10, personal: 5 }
-        },
-        // Sales Representative
-        {
-          firstName: 'Jessica',
-          lastName: 'Taylor',
-          email: 'jessica.taylor@company.com',
-          phone: '+1234567897',
-          password: hashedPassword,
-          employeeId: 'EMP20240008',
-          role: 'employee',
-          departmentId: departments.find(d => d.name === 'Sales').id,
-          designation: 'Sales Representative',
-          basicSalary: 50000,
-          allowances: 8000,
-          deductions: 1000,
-          status: 'active',
-          joiningDate: new Date('2021-09-01'),
-          leaveBalance: { annual: 21, sick: 10, personal: 5 }
-        },
-        // Junior Developer
-        {
-          firstName: 'Alex',
-          lastName: 'Rodriguez',
-          email: 'alex.rodriguez@company.com',
-          phone: '+1234567898',
-          password: hashedPassword,
-          employeeId: 'EMP20240009',
-          role: 'employee',
-          departmentId: departments.find(d => d.name === 'Information Technology').id,
-          designation: 'Junior Software Developer',
-          managerId: 3, // Michael Chen
-          basicSalary: 45000,
-          allowances: 4000,
-          deductions: 800,
-          status: 'active',
-          joiningDate: new Date('2022-01-01'),
-          leaveBalance: { annual: 21, sick: 10, personal: 5 }
-        },
-        // Accountant
-        {
-          firstName: 'Maria',
-          lastName: 'Garcia',
-          email: 'maria.garcia@company.com',
-          phone: '+1234567899',
-          password: hashedPassword,
-          employeeId: 'EMP20240010',
-          role: 'employee',
-          departmentId: departments.find(d => d.name === 'Finance').id,
-          designation: 'Senior Accountant',
-          managerId: 4, // Emily Davis
-          basicSalary: 58000,
-          allowances: 5500,
-          deductions: 1100,
-          status: 'active',
-          joiningDate: new Date('2022-03-01'),
           leaveBalance: { annual: 21, sick: 10, personal: 5 }
         }
       ])
@@ -271,11 +165,6 @@ const seedData = async () => {
       .update(departmentsTable)
       .set({ headId: users.find(u => u.email === 'sarah.johnson@company.com').id })
       .where(eq(departmentsTable.name, 'Human Resources'));
-
-    await db
-      .update(departmentsTable)
-      .set({ headId: users.find(u => u.email === 'emily.davis@company.com').id })
-      .where(eq(departmentsTable.name, 'Finance'));
 
     console.log('✅ Department heads assigned');
 
@@ -302,17 +191,12 @@ const seedData = async () => {
   }
 };
 
-// Run seeding if called directly
-if (import.meta.url === `file://${process.argv[1]}`) {
-  seedData()
-    .then(() => {
-      console.log('✅ Seeding completed');
-      process.exit(0);
-    })
-    .catch((error) => {
-      console.error('❌ Seeding failed:', error);
-      process.exit(1);
-    });
-}
-
-export default seedData;
+seedData()
+  .then(() => {
+    console.log('✅ Seeding completed');
+    process.exit(0);
+  })
+  .catch((error) => {
+    console.error('❌ Seeding failed:', error);
+    process.exit(1);
+  });

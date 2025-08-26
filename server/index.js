@@ -6,9 +6,10 @@ import dotenv from 'dotenv';
 import path from 'path';
 import { fileURLToPath } from 'url';
 
-import connectDB from './config/database.js';
+import { connectDB } from './config/database.js';
 import authRoutes from './routes/auth.js';
 import employeeRoutes from './routes/employees.js';
+import departmentRoutes from './routes/departments.js';
 import attendanceRoutes from './routes/attendance.js';
 import leaveRoutes from './routes/leave.js';
 import payrollRoutes from './routes/payroll.js';
@@ -23,16 +24,11 @@ const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
 
 // Connect to database
-connectDB();
+const dbConnected = await connectDB();
 
-// Seed data in development (optional, only if MongoDB is available)
-if (process.env.NODE_ENV === 'development') {
-  setTimeout(() => {
-    import('./seedData.js').catch(() => {
-      console.log('⚠️  MongoDB seeding skipped - MongoDB may not be running locally');
-      console.log('📝 The app will work without seeded data, but you may need to create users manually');
-    });
-  }, 2000);
+if (!dbConnected) {
+  console.log('⚠️  Database connection failed, but server will continue');
+  console.log('📝 Please check your DATABASE_URL environment variable');
 }
 
 const app = express();
@@ -49,7 +45,7 @@ app.use(limiter);
 
 // CORS
 app.use(cors({
-  origin: process.env.NODE_ENV === 'production' ? 'your-domain.com' : 'http://localhost:3000',
+  origin: process.env.NODE_ENV === 'production' ? process.env.FRONTEND_URL || 'your-domain.com' : 'http://localhost:3000',
   credentials: true
 }));
 
@@ -63,6 +59,7 @@ app.use('/uploads', express.static(path.join(__dirname, 'uploads')));
 // API Routes
 app.use('/api/auth', authRoutes);
 app.use('/api/employees', employeeRoutes);
+app.use('/api/departments', departmentRoutes);
 app.use('/api/attendance', attendanceRoutes);
 app.use('/api/leave', leaveRoutes);
 app.use('/api/payroll', payrollRoutes);
@@ -74,6 +71,7 @@ app.get('/api/health', (req, res) => {
   res.status(200).json({
     status: 'success',
     message: 'Employee Management System API is running',
+    database: dbConnected ? 'connected' : 'disconnected',
     timestamp: new Date().toISOString()
   });
 });
@@ -90,9 +88,10 @@ if (process.env.NODE_ENV === 'production') {
 // Global error handler
 app.use((err, req, res, next) => {
   console.error(err.stack);
-  res.status(500).json({
+  res.status(err.statusCode || 500).json({
     status: 'error',
-    message: process.env.NODE_ENV === 'production' ? 'Something went wrong!' : err.message
+    message: process.env.NODE_ENV === 'production' ? 'Something went wrong!' : err.message,
+    ...(process.env.NODE_ENV === 'development' && { stack: err.stack })
   });
 });
 
@@ -110,4 +109,10 @@ app.listen(PORT, () => {
   console.log(`🚀 Employee Management System server running on port ${PORT}`);
   console.log(`🔗 API available at http://localhost:${PORT}/api`);
   console.log(`🏥 Health check: http://localhost:${PORT}/api/health`);
+  console.log(`📊 Database: ${dbConnected ? '✅ Connected' : '❌ Disconnected'}`);
+  
+  if (dbConnected) {
+    console.log('🎉 Ready to generate and run migrations!');
+    console.log('📝 Run: npm run db:generate && npm run db:migrate');
+  }
 });
