@@ -21,8 +21,8 @@ router.use(authenticate);
 router.get('/team', getTeamMembers); // Get team members for managers
 
 // Routes that require employee access check
-router.get('/:id', canAccessEmployee, getEmployee);
-router.get('/:id/dashboard', canAccessEmployee, getEmployeeDashboard);
+router.get('/:id', canModifyEmployee, getEmployee);
+router.get('/:id/dashboard', canModifyEmployee, getEmployeeDashboard);
 
 // Admin/HR only routes
 router.use(authorize('super_admin', 'admin', 'hr'));
